@@ -1,0 +1,93 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Sample CloudFormation template to create an EC2 instance and IAM role.",
+  "Resources": {
+    "MyEC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t2.micro",
+        "ImageId": "ami-04a37924ffe27da53",
+        "KeyName": "ranjeetkeypair",
+        "IamInstanceProfile": {
+          "Ref": "MyEC2InstanceProfile"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "yum update -y\n",
+                "yum install -y httpd\n",
+                "service httpd start\n",
+                "chkconfig httpd on\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "MyEC2InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "MyEC2Role"
+          }
+        ]
+      }
+    },
+    "MyEC2Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "MyEC2Role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "MyEC2Policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Description": "Instance ID",
+      "Value": {
+        "Ref": "MyEC2Instance"
+      }
+    },
+    "PublicIP": {
+      "Description": "Public IP address of the EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "MyEC2Instance",
+          "PublicIp"
+        ]
+      }
+    }
+  }
+}
